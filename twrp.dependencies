@@ -1,1 +1,9 @@
+[
+    {
+        "remote": "github",
+        "repository": "minimal-manifest-twrp/platform_manifest_twrp_aosp",
+        "target_path": "bootable/recovery",
+        "revision": "twrp-14.1"
+    }
+]
 
