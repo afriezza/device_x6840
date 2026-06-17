@@ -52,4 +52,15 @@ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 67108864 # 64MB standar mtk
 # Boot image header versioning
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.boot.header_version=$(BOARD_BOOTIMG_HEADER_VERSION)
+
+# Hapus atau nonaktifkan ini
+# BOARD_RECOVERYIMAGE_PARTITION_SIZE := ... 
+
+# Tambahkan ini untuk perangkat dengan vendor_boot
+BOARD_USES_RECOVERY_AS_BOOT := false
+BOARD_INCLUDE_RECOVERY_DTBO := true
+TARGET_NO_RECOVERY := true
+BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
+BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+
     
