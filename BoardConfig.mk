@@ -48,3 +48,18 @@ TW_INCLUDE_FBE_METADATA_DECRYPT := true
 
 # Tambahan Batasan Ukuran Maksimal Recovery (Optional)
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 67108864 # 64MB standar mtk
+
+# OrangeFox Recovery Project Flags
+TW_BRAND := OrangeFox
+FOX_VERSION := "R11.1"
+FOX_BUILD_TYPE := "Unofficial"
+
+# Fitur Tambahan OrangeFox (Penting buat MediaTek)
+FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER := true
+FOX_REPLACE_BUSYBOX_FOR_TWRP := true
+FOX_USE_BASH_SHELL := true
+FOX_ASH_IS_BASH := true
+
+# Biar OrangeFox lo gak gembrot pas di-pack
+FOX_REMOVE_AWARDS := true
+
