@@ -1,28 +1,44 @@
-name: Recovery Build
+name: TWRP Build
 
 on:
   workflow_dispatch:
     inputs:
       MANIFEST_URL:
-        description: 'MANIFEST_URL (if want to use SSH keys, use git@github.com:XXXXX)'
+        description: 'MANIFEST_URL (use twrp_omni url if you build for android 5.1 - android 10 device)'
         required: true
         default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp'
+        type: choice
+        options:
+          - https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp
+          - https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni
       MANIFEST_BRANCH:
         description: 'MANIFEST_BRANCH'
         required: true
-        default: 'twrp-12.1'
+        default: 'twrp-11'
+        type: choice
+        options:
+          - twrp-5-1
+          - twrp-6.0
+          - twrp-7.1
+          - twrp-8.1
+          - twrp-9.0
+          - twrp-10.0-deprecated
+          - twrp-11
+          - twrp-12.1
+          - twrp-14
+          - twrp-14.1
       DEVICE_TREE_URL:
         description: 'DEVICE_TREE_URL'
         required: true
-        default: 'https://github.com/TeamWin/android_device_asus_I003D'
+        default: 'https://github.com/Ridhoardhiansyah7/twrp_device_realme_narzo_50i_c11_2021'
       DEVICE_TREE_BRANCH:
         description: 'DEVICE_TREE_BRANCH'
         required: true
-        default: 'android-12.1'
+        default: 'android-11'
       DEVICE_PATH:
         description: 'DEVICE_PATH'
         required: true
-        default: 'device/asus/I003D'
+        default: 'device/realme/RMX3235'
       COMMON_TREE_URL:
         description: 'COMMON_TREE_URL (if no common tree, leave blank)'
         required: false
@@ -32,20 +48,34 @@ on:
       DEVICE_NAME:
         description: 'DEVICE_NAME'
         required: true
-        default: 'I003D'
+        default: 'RMX3235'
       MAKEFILE_NAME:
         description: 'MAKEFILE_NAME'
         required: true
-        default: 'twrp_I003D'
+        default: 'twrp_RMX3235'
       BUILD_TARGET:
         description: 'BUILD_TARGET'
         required: true
-        default: 'recovery'
+        default: 'boot'
+        type: choice
+        options:
+          - recovery
+          - boot
+          - vendor_boot
+      FIX_ATOMIC_ISSUE:
+          description: 'Fix (atomic ret -22) in unisoc device with twrp 12.1 manifest'
+          required: false
+          default: 'false'
+          type: choice
+          options:
+              - 'true'
+              - 'false'
+              
 
 jobs:
   build:
     if: github.event.repository.owner.id == github.event.sender.id
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
@@ -118,11 +148,26 @@ jobs:
       run: |
         repo sync -j$(nproc --all) --force-sync
       working-directory: workspace
+      
+    - name: Apply atomic ret -22 patch
+      if: |
+        github.event.inputs.FIX_ATOMIC_ISSUE == 'true'
+        && github.event.inputs.MANIFEST_BRANCH == 'twrp-12.1'
+      run: |
+        echo "Apply patch ${{ github.workspace }}/issue_atomic/graphics_drm.cpp >  ${{ github.workspace }}/workspace/bootable/recovery/minuitwrp/graphics_drm.cpp"
+        cp ${{ github.workspace }}/issue_atomic/graphics_drm.cpp \
+        ${{ github.workspace }}/workspace/bootable/recovery/minuitwrp/graphics_drm.cpp
 
     - name: Clone device tree
       run: |
         git clone ${{ github.event.inputs.DEVICE_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
+    - name: Chmod a custom mkbootimg
+      run: |
+        chmod +x ${{ github.event.inputs.DEVICE_PATH }}/mkbootimg
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+      continue-on-error: true
 
     - name: Clone common tree
       if: |
@@ -152,6 +197,18 @@ jobs:
       with:
         swap-size-gb: 12
 
+    - name: Getting AVBTool
+      run: |
+        rm -rf out
+        mkdir out
+        mkdir out/host
+        mkdir out/host/linux-x86
+        mkdir out/host/linux-x86/bin
+        wget -P out/host/linux-x86/bin https://raw.githubusercontent.com/Galaxy-MT6768/Galaxy_Recovery-Builder/main/files/bin/avbtool
+        chmod 777 out/host/linux-x86/bin/avbtool
+        ls out/host/linux-x86/bin/avbtool
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
     - name: Building recovery
       run: |
         source build/envsetup.sh
@@ -159,14 +216,23 @@ jobs:
         lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
+    - name: Check AVB info
+      run: |
+        wget https://raw.githubusercontent.com/Galaxy-MT6768/Galaxy_Recovery-Builder/main/files/avbtool.py
+        python3 avbtool.py info_image --image out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img
+        python3 avbtool.py info_image --image out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img > image_info
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
       with:
         files: | 
+          workspace/image_info
           workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img
+          workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.tar
           workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.zip
           workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*vendor*.img
-        name: ${{ github.event.inputs.DEVICE_NAME }}-${{ github.run_id }}
+        name: ${{ github.event.inputs.MAKEFILE_NAME }}-${{ github.run_id }}
         tag_name: ${{ github.run_id }}
         body: |
           Manifest: ${{ github.event.inputs.MANIFEST_BRANCH }}
