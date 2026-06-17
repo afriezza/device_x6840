@@ -17,7 +17,7 @@ jobs:
     - name: Install Panduan Build Sistem
       run: |
         sudo apt-get update
-        sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
+        sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
 
     - name: Unduh Alat Sinkronisasi Repo (Repo Tool)
       run: |
