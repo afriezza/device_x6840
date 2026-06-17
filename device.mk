@@ -30,3 +30,8 @@ PRODUCT_NAME := twrp_X6840
 PRODUCT_BRAND := Infinix
 PRODUCT_MODEL := Infinix SMART 20
 PRODUCT_MANUFACTURER := Infinix
+
+# Tambahkan ini ke device.mk lo
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.boot.header_version=4
+
