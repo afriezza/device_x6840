@@ -1,4 +1,4 @@
-name: Build OrangeFox Infinix X6840
+name: Build OrangeFox Resmi Infinix X6840
 
 on:
   workflow_dispatch:
@@ -9,53 +9,62 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Device Tree
+    - name: Checkout Device Tree Lo
       uses: actions/checkout@v4
       with:
         path: device/infinix/X6840
 
-    - name: Install Panduan Build Sistem
+    - name: Install Panduan Build Sistem Modern
       run: |
         sudo apt-get update
         sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
 
-    - name: Unduh Alat Sinkronisasi Repo (Repo Tool)
+    - name: Ambil dan Jalankan Alat Sync Resmi OrangeFox
       run: |
-        mkdir -p ~/bin
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-        chmod a+x ~/bin/repo
-        sudo ln -sf ~/bin/repo /usr/bin/repo
-
-    - name: Sinkronisasi Source Code OrangeFox (Sync Fox)
-      run: |
-        # Konfigurasi identitas Git global biar server gak bingung
         git config --global user.name "GitHub Action"
         git config --global user.email "actions@github.com"
         
-        # Paksa git untuk selalu pakai opsi tanpa interaksi
-        export GIT_TERMINAL_PROMPT=0
+        # Bikin folder sync sesuai petunjuk wiki
+        mkdir ~/OrangeFox_sync
+        cd ~/OrangeFox_sync
         
-        mkdir -p ~/orangefox
-        cd ~/orangefox
+        # Clone script sync resmi dari github mirror agar lolos autentikasi
+        git clone https://github.com/OrangeFoxRecovery/sync.git
+        cd sync
         
-        # Trik Utama: Dialihkan ke Mirror GitHub OrangeFox resmi biar gak kena blokir autentikasi GitLab
-        repo init --depth=1 -u https://github.com/OrangeFoxRecovery/Manifest.git -b fox_9.0
-        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+        # Jalankan sinkronisasi cabang 12.1 (Paling stabil untuk OrangeFox Android modern)
+        ./orangefox_sync.sh --branch 12.1 --path ~/fox_12.1
         
-        # Pindahkan device tree lo ke folder build utama
-        mv $GITHUB_WORKSPACE/device ~/orangefox/device
+        # Pindahkan folder device tree Infinix lo ke lokasi kompilasi yang benar
+        mv $GITHUB_WORKSPACE/device ~/fox_12.1/device
 
-    - name: Proses Compile OrangeFox Dimulai
+    - name: Proses Compile Sesuai Standard Prosedur Wiki
       run: |
-        cd ~/orangefox
+        cd ~/fox_12.1
+        /bin/bash
+        
+        # EXPORT SEMUA VARIABEL ORANGEFOX DI SINI (Sesuai Aturan Wiki)
         export ALLOW_MISSING_DEPENDENCIES=true
+        export FOX_BUILD_DEVICE=X6840
+        export LC_ALL="C"
+        
+        # Fitur optimasi kompilasi MediaTek non-Xiaomi
+        export FOX_VANILLA_BUILD=1
         export FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER=true
+        export FOX_REPLACE_BUSYBOX_FOR_TWRP=true
+        export FOX_USE_BASH_SHELL=true
+        export FOX_ASH_IS_BASH=true
+        export FOX_DRASTIC_SIZE_REDUCTION=1
+        
+        # Mulai proses kompilasi resmi OrangeFox
         source build/envsetup.sh
-        lunch twrp_X6840-eng
-        mka recoveryimage -j$(nproc --all)
+        lunch twrp_X6840-eng && mka adbd recoveryimage
 
-    - name: Upload Hasil OrangeFox Matang
+    - name: Upload Hasil OrangeFox Zip + Img Matang
       uses: actions/upload-artifact@v4
       with:
-        name: OrangeFox-Infinix-X6840
-        path: ~/orangefox/out/target/product/X6840/OrangeFox-*.zip
+        name: OrangeFox-Infinix-X6840-Matang
+        path: |
+          ~/fox_12.1/out/target/product/X6840/OrangeFox-*.img
+          ~/fox_12.1/out/target/product/X6840/OrangeFox-*.zip
+          
