@@ -37,20 +37,17 @@ jobs:
         cd sync
         ./orangefox_sync.sh --branch 12.1 --path /home/runner/fox_12.1
 
-    - name: Proses Compile (Final - Debug Mode)
+    - name: Proses Compile (Final)
       run: |
-        # DETEKTIF: List isi folder home biar kita tahu di mana folder fox_12.1 sebenarnya
-        echo "--- ISI FOLDER HOME ---"
-        ls -F /home/runner
-        
-        # Masuk ke folder fox_12.1 (pastiin path ini bener)
+        # 1. Pindah ke direktori hasil sync
         cd /home/runner/fox_12.1
         
-        # Buat struktur folder device tree
+        # 2. Cari lokasi device tree secara dinamis dan copy isinya
+        SRC_DIR=$(find /home/runner/work -type d -name "device_tree" | head -n 1)
         mkdir -p device/infinix/X6840
-        mv $GITHUB_WORKSPACE/device_tree/* device/infinix/X6840/
+        cp -r $SRC_DIR/* device/infinix/X6840/
         
-        # Export variabel build
+        # 3. Export variabel build
         export ALLOW_MISSING_DEPENDENCIES=true
         export FOX_BUILD_DEVICE=X6840
         export LC_ALL="C"
@@ -61,7 +58,7 @@ jobs:
         export FOX_ASH_IS_BASH=true
         export FOX_DRASTIC_SIZE_REDUCTION=1
         
-        # Jalankan kompilasi
+        # 4. Kompilasi
         source build/envsetup.sh
         lunch twrp_X6840-eng && mka adbd recoveryimage
 
