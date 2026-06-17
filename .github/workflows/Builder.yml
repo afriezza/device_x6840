@@ -37,12 +37,16 @@ jobs:
         cd sync
         ./orangefox_sync.sh --branch 12.1 --path /home/runner/fox_12.1
 
-    - name: Proses Compile (Final)
+    - name: Proses Compile (Final - Debug Mode)
       run: |
-        # Masuk ke folder hasil sync
+        # DETEKTIF: List isi folder home biar kita tahu di mana folder fox_12.1 sebenarnya
+        echo "--- ISI FOLDER HOME ---"
+        ls -F /home/runner
+        
+        # Masuk ke folder fox_12.1 (pastiin path ini bener)
         cd /home/runner/fox_12.1
         
-        # Buat struktur folder device tree dan pindahkan isi repo kita
+        # Buat struktur folder device tree
         mkdir -p device/infinix/X6840
         mv $GITHUB_WORKSPACE/device_tree/* device/infinix/X6840/
         
