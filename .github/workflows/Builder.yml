@@ -20,19 +20,22 @@ jobs:
         sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
 
     - name: Ambil dan Jalankan Alat Sync Resmi OrangeFox
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git config --global user.name "GitHub Action"
-        git config --global user.email "actions@github.com"
+        # Setup identitas Git wajib biar proses sync lancar
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
         # Bikin folder sync sesuai petunjuk wiki
         mkdir ~/OrangeFox_sync
         cd ~/OrangeFox_sync
         
-        # Clone script sync resmi dari github mirror agar lolos autentikasi
-        git clone https://github.com/OrangeFoxRecovery/sync.git
+        # Trik Bypass: Suntik token autentikasi otomatis ke dalam URL cloning GitHub
+        git clone https://x-access-token:${GH_TOKEN}@github.com/OrangeFoxRecovery/sync.git
         cd sync
         
-        # Jalankan sinkronisasi cabang 12.1 (Paling stabil untuk OrangeFox Android modern)
+        # Jalankan sinkronisasi cabang 12.1 sesuai prosedur wiki resmi
         ./orangefox_sync.sh --branch 12.1 --path ~/fox_12.1
         
         # Pindahkan folder device tree Infinix lo ke lokasi kompilasi yang benar
