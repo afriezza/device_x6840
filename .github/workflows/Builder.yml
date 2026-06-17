@@ -1,19 +1,56 @@
-    - name: Proses Compile Sesuai Standard Prosedur Wiki
+name: Build OrangeFox Resmi Infinix X6840
+
+on:
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Device Tree
+      uses: actions/checkout@v4
+      with:
+        path: device/infinix/X6840
+
+    - name: Install Panduan Build Sistem
       run: |
-        # Cari di mana folder fox_12.1 berada
-        echo "Mencari lokasi folder fox_12.1..."
-        find /home/runner -type d -name "fox_12.1"
-        
-        # Masuk ke folder yang ditemukan (Gue pakai variable biar gak error)
-        FOX_PATH=$(find /home/runner -type d -name "fox_12.1" | head -n 1)
+        sudo apt-get update
+        sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
+
+    - name: Setup Repo Tool
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        sudo cp ~/bin/repo /usr/local/bin/repo
+        echo "$HOME/bin" >> $GITHUB_PATH
+
+    - name: Sinkronisasi Source Code
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        mkdir -p ~/OrangeFox_sync
+        cd ~/OrangeFox_sync
+        git clone -c http.sslVerify=false https://gitlab.com/OrangeFox/sync.git
+        cd sync
+        ./orangefox_sync.sh --branch 12.1 --path /home/runner/fox_12.1
+
+    - name: Proses Compile (Pencarian Folder Otomatis)
+      run: |
+        # Cari lokasi folder fox_12.1 dan masuk ke sana secara dinamis
+        FOX_PATH=$(find /home/runner -maxdepth 2 -type d -name "fox_12.1")
+        echo "Masuk ke: $FOX_PATH"
         cd $FOX_PATH
         
-        # Export variabel wajib sesuai Wiki
+        # Pindahkan device tree ke lokasi yang benar
+        mv $GITHUB_WORKSPACE/device device/infinix/X6840
+        
+        # Variabel Build
         export ALLOW_MISSING_DEPENDENCIES=true
         export FOX_BUILD_DEVICE=X6840
         export LC_ALL="C"
-        
-        # Fitur optimasi
         export FOX_VANILLA_BUILD=1
         export FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER=true
         export FOX_REPLACE_BUSYBOX_FOR_TWRP=true
@@ -21,6 +58,14 @@
         export FOX_ASH_IS_BASH=true
         export FOX_DRASTIC_SIZE_REDUCTION=1
         
-        # Mulai kompilasi
+        # Kompilasi
         source build/envsetup.sh
         lunch twrp_X6840-eng && mka adbd recoveryimage
+
+    - name: Upload Hasil
+      uses: actions/upload-artifact@v4
+      with:
+        name: OrangeFox-Infinix-X6840-Matang
+        path: |
+          /home/runner/fox_12.1/out/target/product/X6840/OrangeFox-*.img
+          /home/runner/fox_12.1/out/target/product/X6840/OrangeFox-*.zip
