@@ -1,0 +1,22 @@
+# mount point   fstype  device                             options
+/system         erofs   system                             display="System";logical
+/vendor         erofs   vendor                             display="Vendor";logical
+/product        erofs   product                            display="Product";logical
+/system_ext     erofs   system_ext                         display="System Ext";logical
+/odm            erofs   odm                                display="ODM";logical
+
+/metadata       f2fs    /dev/block/by-name/metadata        display="Metadata";wrappedkey
+/data           f2fs    /dev/block/by-name/userdata        fileencryption=aes-256-xts:aes-256-cts:v2:keydirectory=/metadata/vold/metadata_encryption
+
+/boot           emmc    /dev/block/by-name/boot            display="Boot";backup=1;flashimg=1
+/vendor_boot    emmc    /dev/block/by-name/vendor_boot     display="Vendor Boot";backup=1;flashimg=1
+/dtbo           emmc    /dev/block/by-name/dtbo            display="DTBO";backup=1;flashimg=1
+/vbmeta         emmc    /dev/block/by-name/vbmeta          display="VBMeta";backup=1;flashimg=1
+
+/persistent     emmc    /dev/block/by-name/frp             display="FRP";backup=1
+/nvram          emmc    /dev/block/by-name/nvram           display="NVRAM";backup=1
+/nvdata         ext4    /dev/block/by-name/nvdata          display="NVData";backup=1
+/persist        ext4    /dev/block/by-name/persist         display="Persist";backup=1
+
+/external_sd    auto    /devices/platform/11240000.mmc* flags=display="MicroSD";storage;wipeingui;removable
+/usb_otg        auto    /devices/platform/mt_usb* flags=display="USB-OTG";storage;wipeingui;removable
