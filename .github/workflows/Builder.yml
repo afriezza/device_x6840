@@ -1,0 +1,52 @@
+name: Build OrangeFox Infinix X6840
+
+on:
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Device Tree
+      uses: actions/checkout@v4
+      with:
+        path: device/infinix/X6840
+
+    - name: Install Panduan Build Sistem
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
+
+    - name: Unduh Alat Sinkronisasi Repo (Repo Tool)
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        sudo ln -sf ~/bin/repo /usr/bin/repo
+
+    - name: Sinkronisasi Source Code OrangeFox (Sync Fox)
+      run: |
+        mkdir -p ~/orangefox
+        cd ~/orangefox
+        repo init --depth=1 -u https://gitlab.com/OrangeFox/Manifest.git -b fox_9.0
+        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+        
+        # Pindahkan device tree lo ke folder build utama
+        mv $GITHUB_WORKSPACE/device ~/orangefox/device
+
+    - name: Proses Compile OrangeFox Dimulai
+      run: |
+        cd ~/orangefox
+        export ALLOW_MISSING_DEPENDENCIES=true
+        export FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER=true
+        source build/envsetup.sh
+        lunch twrp_X6840-eng
+        mka recoveryimage -j$(nproc --all)
+
+    - name: Upload Hasil OrangeFox Matang
+      uses: actions/upload-artifact@v4
+      with:
+        name: OrangeFox-Infinix-X6840
+        path: ~/orangefox/out/target/product/X6840/OrangeFox-*.zip
