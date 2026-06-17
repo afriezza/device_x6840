@@ -1,1 +1,0 @@
-add_lunch_combo omni_X6840-eng
