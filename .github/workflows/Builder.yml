@@ -1,40 +1,40 @@
-name: Build TWRP X6840 (Vendor_Boot)
+name: Build TWRP
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Prepare Build Environment
-      run: |
-        sudo apt update && sudo apt install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc
-        mkdir -p ~/twrp && cd ~/twrp
-        repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git -b twrp-12.1
-        repo sync -j8 --force-sync
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Device Tree
-      run: |
-        # Copy isi repo lo ke folder device yang benar
-        mkdir -p ~/twrp/device/infinix/X6840
-        cp -r . ~/twrp/device/infinix/X6840/
+      - name: Prepare
+        run: |
+          sudo apt update && sudo apt install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc
+          mkdir -p ~/twrp
+          cd ~/twrp
+          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git -b twrp-12.1
+          repo sync -j8 --force-sync
 
-    - name: Build
-      run: |
-        cd ~/twrp
-        source build/envsetup.sh
-        export ALLOW_MISSING_DEPENDENCIES=true
-        # Lunch sesuai PRODUCT_NAME di twrp_X6840.mk
-        lunch twrp_X6840-eng
-        # Build target vendor_boot
-        mka vendor_bootimage
+      - name: Setup Device Tree
+        run: |
+          # Bikin folder device tree yang bersih
+          mkdir -p ~/twrp/device/infinix/X6840
+          # Copy file dari repo lo (exclude .github biar nggak error)
+          rsync -av --exclude='.github' . ~/twrp/device/infinix/X6840/
 
-    - name: Upload
-      uses: actions/upload-artifact@v4
-      with:
-        name: TWRP-X6840-VendorBoot
-        path: ~/twrp/out/target/product/X6840/vendor_boot.img
-        
+      - name: Build
+        run: |
+          cd ~/twrp
+          source build/envsetup.sh
+          export ALLOW_MISSING_DEPENDENCIES=true
+          lunch omni_X6840-eng
+          mka vendor_bootimage
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWRP-X6840
+          path: ~/twrp/out/target/product/X6840/vendor_boot.img
