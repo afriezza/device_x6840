@@ -1,9 +1,9 @@
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64bit.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/base.mk)
-$(call inherit-product, vendor/omni/config/common.mk)
+# Inherit dari vendor TWRP langsung, jangan panggil SRC_TARGET_DIR
+$(call inherit-product, vendor/twrp/config/common.mk)
 
+# Identitas perangkat
 PRODUCT_DEVICE := X6840
-PRODUCT_NAME := omni_X6840
+PRODUCT_NAME := twrp_X6840
 PRODUCT_BRAND := Infinix
 PRODUCT_MODEL := Infinix SMART 20
 PRODUCT_MANUFACTURER := Infinix
