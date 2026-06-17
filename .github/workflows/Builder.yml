@@ -12,7 +12,7 @@ jobs:
     - name: Checkout Device Tree
       uses: actions/checkout@v4
       with:
-        path: device/infinix/X6840
+        path: device_tree
 
     - name: Install Panduan Build Sistem
       run: |
@@ -37,17 +37,16 @@ jobs:
         cd sync
         ./orangefox_sync.sh --branch 12.1 --path /home/runner/fox_12.1
 
-    - name: Proses Compile (Pencarian Folder Otomatis)
+    - name: Proses Compile (Final)
       run: |
-        # Cari lokasi folder fox_12.1 dan masuk ke sana secara dinamis
-        FOX_PATH=$(find /home/runner -maxdepth 2 -type d -name "fox_12.1")
-        echo "Masuk ke: $FOX_PATH"
-        cd $FOX_PATH
+        # Masuk ke folder hasil sync
+        cd /home/runner/fox_12.1
         
-        # Pindahkan device tree ke lokasi yang benar
-        mv $GITHUB_WORKSPACE/device device/infinix/X6840
+        # Buat struktur folder device tree dan pindahkan isi repo kita
+        mkdir -p device/infinix/X6840
+        mv $GITHUB_WORKSPACE/device_tree/* device/infinix/X6840/
         
-        # Variabel Build
+        # Export variabel build
         export ALLOW_MISSING_DEPENDENCIES=true
         export FOX_BUILD_DEVICE=X6840
         export LC_ALL="C"
@@ -58,7 +57,7 @@ jobs:
         export FOX_ASH_IS_BASH=true
         export FOX_DRASTIC_SIZE_REDUCTION=1
         
-        # Kompilasi
+        # Jalankan kompilasi
         source build/envsetup.sh
         lunch twrp_X6840-eng && mka adbd recoveryimage
 
