@@ -28,9 +28,18 @@ jobs:
 
     - name: Sinkronisasi Source Code OrangeFox (Sync Fox)
       run: |
+        # Konfigurasi identitas Git global biar server gak bingung
+        git config --global user.name "GitHub Action"
+        git config --global user.email "actions@github.com"
+        
+        # Paksa git untuk selalu pakai opsi tanpa interaksi
+        export GIT_TERMINAL_PROMPT=0
+        
         mkdir -p ~/orangefox
         cd ~/orangefox
-        repo init --depth=1 -u https://gitlab.com/OrangeFox/Manifest.git -b fox_9.0
+        
+        # Trik Utama: Dialihkan ke Mirror GitHub OrangeFox resmi biar gak kena blokir autentikasi GitLab
+        repo init --depth=1 -u https://github.com/OrangeFoxRecovery/Manifest.git -b fox_9.0
         repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
         
         # Pindahkan device tree lo ke folder build utama
