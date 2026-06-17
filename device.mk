@@ -4,11 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Inherit dari konfigurasi dasar
-$(call inherit-product, $(SRC_TARGET_DIR)/product/full_base.mk)
+# CUKUP INHERIT DARI TWRP SAJA
 $(call inherit-product, vendor/twrp/config/common.mk)
 
-# Memanggil folder root recovery bawaan ramdisk asli
+# Memanggil paket dasar
 PRODUCT_PACKAGES += \
     otacerts \
     fastbootd
@@ -23,6 +22,6 @@ PRODUCT_BRAND := Infinix
 PRODUCT_MODEL := Infinix SMART 20
 PRODUCT_MANUFACTURER := Infinix
 
-# Property Overrides (Digabung biar rapi)
+# Property Overrides
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.boot.header_version=4
