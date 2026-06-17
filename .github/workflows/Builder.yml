@@ -19,36 +19,44 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gperf gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc bison build-essential ccache curl flex g++ python3 openjdk-11-jdk
 
+    - name: Setup Repo Tool (Manual & Path Hardcoded)
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        # Memastikan repo ada di PATH global
+        echo "$HOME/bin" >> $GITHUB_PATH
+        # Tambahan: copy repo ke /usr/local/bin supaya script sync pasti nemu
+        sudo cp ~/bin/repo /usr/local/bin/repo
+
     - name: Ambil dan Jalankan Alat Sync Resmi OrangeFox
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global credential.helper ""
         
-        mkdir ~/OrangeFox_sync
+        mkdir -p ~/OrangeFox_sync
         cd ~/OrangeFox_sync
         
-        # Clone tanpa SSL verification dan paksa non-interaktif
+        # Clone Sync Tools Resmi dari GitLab
         git clone -c http.sslVerify=false https://gitlab.com/OrangeFox/sync.git
         cd sync
         
-        # Jalankan sinkronisasi cabang 12.1
-        ./orangefox_sync.sh --branch 12.1 --path ~/fox_12.1
+        # Jalankan sync sesuai README (Path absolut wajib ada)
+        # Kita panggil repo secara eksplisit lewat path lengkap biar gk error
+        export PATH=$PATH:/usr/local/bin
+        ./orangefox_sync.sh --branch 12.1 --path /home/runner/fox_12.1
         
-        # Pindahkan device tree lo ke lokasi kompilasi
-        mv $GITHUB_WORKSPACE/device ~/fox_12.1/device
+        # Pindahkan device tree lo ke lokasi hasil sync
+        mv $GITHUB_WORKSPACE/device /home/runner/fox_12.1/device
 
     - name: Proses Compile Sesuai Standard Prosedur Wiki
       run: |
-        cd ~/fox_12.1
-        /bin/bash
+        cd /home/runner/fox_12.1
         
-        # Variabel OrangeFox Sesuai Aturan Wiki
+        # Export variabel wajib sesuai Wiki
         export ALLOW_MISSING_DEPENDENCIES=true
         export FOX_BUILD_DEVICE=X6840
         export LC_ALL="C"
-        
-        # Fitur optimasi
         export FOX_VANILLA_BUILD=1
         export FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER=true
         export FOX_REPLACE_BUSYBOX_FOR_TWRP=true
@@ -56,14 +64,14 @@ jobs:
         export FOX_ASH_IS_BASH=true
         export FOX_DRASTIC_SIZE_REDUCTION=1
         
-        # Mulai kompilasi
         source build/envsetup.sh
         lunch twrp_X6840-eng && mka adbd recoveryimage
 
-    - name: Upload Hasil OrangeFox Zip + Img Matang
+    - name: Upload Hasil OrangeFox
       uses: actions/upload-artifact@v4
       with:
         name: OrangeFox-Infinix-X6840-Matang
         path: |
-          ~/fox_12.1/out/target/product/X6840/OrangeFox-*.img
-          ~/fox_12.1/out/target/product/X6840/OrangeFox-*.zip
+          /home/runner/fox_12.1/out/target/product/X6840/OrangeFox-*.img
+          /home/runner/fox_12.1/out/target/product/X6840/OrangeFox-*.zip
+          
