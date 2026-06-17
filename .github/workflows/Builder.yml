@@ -31,23 +31,31 @@ jobs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        mkdir -p ~/OrangeFox_sync
-        cd ~/OrangeFox_sync
+        # Kita sync di folder home langsung agar mudah diakses
+        cd ~
         git clone -c http.sslVerify=false https://gitlab.com/OrangeFox/sync.git
         cd sync
         ./orangefox_sync.sh --branch 12.1 --path /home/runner/fox_12.1
 
-    - name: Proses Compile (Final)
+    - name: Proses Compile (Paling Aman)
       run: |
-        # 1. Pindah ke direktori hasil sync
-        cd /home/runner/fox_12.1
+        # Cari lokasi folder dengan perintah find yang lebih teliti
+        TARGET_DIR=$(find / -name "fox_12.1" -type d 2>/dev/null | head -n 1)
         
-        # 2. Cari lokasi device tree secara dinamis dan copy isinya
-        SRC_DIR=$(find /home/runner/work -type d -name "device_tree" | head -n 1)
+        if [ -z "$TARGET_DIR" ]; then
+          echo "Folder fox_12.1 tidak ditemukan!"
+          exit 1
+        fi
+        
+        echo "Folder ditemukan di: $TARGET_DIR"
+        cd "$TARGET_DIR"
+        
+        # Pindahkan device tree
+        SRC_DIR=$(find /home/runner/work -name "device_tree" -type d | head -n 1)
         mkdir -p device/infinix/X6840
-        cp -r $SRC_DIR/* device/infinix/X6840/
+        cp -r "$SRC_DIR"/* device/infinix/X6840/
         
-        # 3. Export variabel build
+        # Export variabel build
         export ALLOW_MISSING_DEPENDENCIES=true
         export FOX_BUILD_DEVICE=X6840
         export LC_ALL="C"
@@ -58,7 +66,7 @@ jobs:
         export FOX_ASH_IS_BASH=true
         export FOX_DRASTIC_SIZE_REDUCTION=1
         
-        # 4. Kompilasi
+        # Build
         source build/envsetup.sh
         lunch twrp_X6840-eng && mka adbd recoveryimage
 
